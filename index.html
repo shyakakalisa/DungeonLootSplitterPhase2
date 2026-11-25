@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A simple dungeon loot splitter application.">
+    <title>Dungeon Loot Splitter</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/script.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>Dungeon Loot Splitter</h1>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Party Setup</h2>
+            <label for="partySize">Number of Party Members:</label>
+            <input type="number" id="partySize" min="1" step="1">
+        </section>
+
+        <section class="panel">
+            <h2>Add Loot</h2>
+            <label for="lootName">Loot Name:</label>
+            <input type="text" id="lootName">
+
+            <label for="lootValue">Loot Value:</label>
+            <input type="number" id="lootValue" min="0" step="0.01">
+
+            <button type="button" id="addButton">Add Loot</button>
+            <p id="addMessage" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="panel">
+            <h2>Loot List</h2>
+            <ul id="lootList">
+                <li>No loot added yet.</li>
+            </ul>
+            <p>Total Loot: $<span id="runningTotal">0.00</span></p>
+        </section>
+
+        <section class="panel">
+            <h2>Split Loot</h2>
+            <button type="button" id="splitButton">Split Loot</button>
+            <p>Total Loot: $<span id="splitTotal">0.00</span></p>
+            <p>Loot Per Party Member: $<span id="perMember">0.00</span></p>
+            <p id="splitMessage" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="panel reflection">
+            <h2>Logic Explanation</h2>
+            <p>
+                My program stores loot items in an array. Each item
+                is an object with a name and value. When I add loot,
+                the program checks the inputs before saving the item.
+            </p>
+            <p>
+                I use a for loop to calculate the total value of
+                the loot. Another loop displays the items on the
+                page. The list and total update when new loot is added.
+            </p>
+            <p>
+                I use if statements to check for missing names,
+                invalid values, and invalid party sizes. When the
+                user clicks Split Loot, the program divides the
+                total by the number of party members.
+            </p>
+        </section>
+    </main>
+</body>
+</html>
