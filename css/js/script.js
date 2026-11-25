@@ -1,132 +1,181 @@
 
-"use strict";
+// The loot array is the single source of truth for loot data.
+let loot = [];
 
-// This array stores the loot items between button clicks.
-const loot = [];
+// Select the existing HTML elements.
+let partySize = document.getElementById("partySize");
+let lootName = document.getElementById("lootName");
+let lootValue = document.getElementById("lootValue");
+let lootQuantity = document.getElementById("lootQuantity");
 
-const addButton = document.getElementById("addButton");
-const splitButton = document.getElementById("splitButton");
+let addLootBtn = document.getElementById("addLootBtn");
+let splitLootBtn = document.getElementById("splitLootBtn");
 
-function calculateTotal() {
-    let total = 0;
+let partyError = document.getElementById("partyError");
+let lootError = document.getElementById("lootError");
 
-    // Add the value of every item in the loot array.
-    for (let i = 0; i < loot.length; i++) {
-        total += loot[i].value;
-    }
+let lootRows = document.getElementById("lootRows");
+let lootTable = document.getElementById("lootTable");
+let noLootMessage = document.getElementById("noLootMessage");
 
-    return total;
-}
+let lootTotalRow = document.getElementById("lootTotalRow");
+let totalLoot = document.getElementById("totalLoot");
 
+let splitResults = document.getElementById("splitResults");
+let splitTotal = document.getElementById("splitTotal");
+let lootPerMember = document.getElementById("lootPerMember");
+
+// Validate input before adding an item to the array.
 function addLoot() {
-    const name = document.getElementById("lootName").value.trim();
-    const valueInput = document.getElementById("lootValue").value.trim();
-    const message = document.getElementById("addMessage");
+    let name = lootName.value.trim();
+    let value = Number(lootValue.value);
+    let quantity = Number(lootQuantity.value);
+
+    lootError.textContent = "";
 
     if (name === "") {
-        message.textContent = "Please enter a loot name.";
+        lootError.textContent = "Please enter a loot name.";
         return;
     }
 
-    if (valueInput === "" || !Number.isFinite(Number(valueInput))) {
-        message.textContent = "Please enter a valid loot value.";
+    if (lootValue.value === "" ||
+        !Number.isFinite(value) ||
+        value < 0 ||
+        !lootValue.validity.valid) {
+        lootError.textContent = "Please enter a valid nonnegative loot value.";
         return;
     }
 
-    const value = Number(valueInput);
-
-    if (value < 0 || !Number.isInteger(value * 100)) {
-        message.textContent = "Enter a nonnegative value with up to two decimal places.";
+    if (lootQuantity.value === "" ||
+        !Number.isInteger(quantity) ||
+        quantity < 1) {
+        lootError.textContent = "Quantity must be a whole number of at least 1.";
         return;
     }
 
-    // Store the name and value together in one object.
-    const item = {
+    // Store each valid item as a plain object.
+    let item = {
         name: name,
-        value: value
+        value: value,
+        quantity: quantity
     };
 
     loot.push(item);
 
-    document.getElementById("lootName").value = "";
-    document.getElementById("lootValue").value = "";
+    // Refresh the interface after changing the array.
+    updateUI();
 
-    message.textContent = "Loot added successfully.";
-
-    renderLoot();
-
-    // Clear the old split because the total has changed.
-    document.getElementById("splitTotal").textContent = "0.00";
-    document.getElementById("perMember").textContent = "0.00";
-    document.getElementById("splitMessage").textContent =
-        "Loot changed. Click Split Loot to calculate again.";
+    // Clear the fields for the next item.
+    lootName.value = "";
+    lootValue.value = "";
+    lootQuantity.value = "1";
 }
 
-function renderLoot() {
-    const list = document.getElementById("lootList");
+// Remove the selected item and refresh the interface.
+function removeLoot(index) {
+    loot.splice(index, 1);
+    updateUI();
+}
 
-    list.textContent = "";
+// Centralize calculations and state-based rendering.
+function updateUI() {
+    let total = 0;
+    let members = Number(partySize.value);
+    let validParty = Number.isInteger(members) && members >= 1;
 
-    if (loot.length === 0) {
-        const emptyItem = document.createElement("li");
-        emptyItem.textContent = "No loot added yet.";
-        list.appendChild(emptyItem);
-    }
-
-    // Create a list item for each object in the array.
+    // 1. Calculate the total currency value from the array.
     for (let i = 0; i < loot.length; i++) {
-        const listItem = document.createElement("li");
-
-        listItem.textContent =
-            loot[i].name + " - $" + loot[i].value.toFixed(2);
-
-        list.appendChild(listItem);
+        total += loot[i].value * loot[i].quantity;
     }
 
-    document.getElementById("runningTotal").textContent =
-        calculateTotal().toFixed(2);
-}
+    totalLoot.textContent = total.toFixed(2);
+    splitTotal.textContent = total.toFixed(2);
 
-function splitLoot() {
-    const partyInput = document.getElementById("partySize").value.trim();
-    const message = document.getElementById("splitMessage");
+    // 2. Rebuild the loot list from the current array.
+    lootRows.innerHTML = "";
 
-    // Reset previous results before checking the inputs.
-    document.getElementById("splitTotal").textContent = "0.00";
-    document.getElementById("perMember").textContent = "0.00";
+    for (let i = 0; i < loot.length; i++) {
+        let row = document.createElement("tr");
 
-    if (partyInput === "") {
-        message.textContent = "Please enter the party size.";
-        return;
+        let nameCell = document.createElement("td");
+        nameCell.textContent = loot[i].name;
+
+        let valueCell = document.createElement("td");
+        valueCell.textContent = "$" + loot[i].value.toFixed(2);
+
+        let quantityCell = document.createElement("td");
+        quantityCell.textContent = loot[i].quantity;
+
+        let actionCell = document.createElement("td");
+
+        let removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.textContent = "Remove";
+
+        removeBtn.setAttribute(
+            "aria-label",
+            "Remove " + loot[i].name
+        );
+
+        removeBtn.addEventListener("click", function () {
+            removeLoot(i);
+        });
+
+        actionCell.appendChild(removeBtn);
+
+        row.appendChild(nameCell);
+        row.appendChild(valueCell);
+        row.appendChild(quantityCell);
+        row.appendChild(actionCell);
+
+        lootRows.appendChild(row);
     }
 
-    const partySize = Number(partyInput);
-
-    if (!Number.isInteger(partySize) || partySize < 1) {
-        message.textContent =
+    // Display a helpful message for an invalid party size.
+    if (partySize.value !== "" && !validParty) {
+        partyError.textContent =
             "Party size must be a whole number of at least 1.";
-        return;
+    } else {
+        partyError.textContent = "";
     }
 
+    // 3. Calculate the split only when the state is valid.
+    if (loot.length > 0 && validParty) {
+        let share = total / members;
+        lootPerMember.textContent = share.toFixed(2);
+    } else {
+        lootPerMember.textContent = "";
+    }
+
+    // 4. Enable or disable the Split Loot button.
+    if (loot.length > 0 && validParty) {
+        splitLootBtn.disabled = false;
+    } else {
+        splitLootBtn.disabled = true;
+    }
+
+    // 5. Control visibility based on application state.
     if (loot.length === 0) {
-        message.textContent = "Please add loot before splitting.";
-        return;
+        noLootMessage.classList.remove("hidden");
+        lootTable.classList.add("hidden");
+        lootTotalRow.classList.add("hidden");
+    } else {
+        noLootMessage.classList.add("hidden");
+        lootTable.classList.remove("hidden");
+        lootTotalRow.classList.remove("hidden");
     }
 
-    const total = calculateTotal();
-    const share = total / partySize;
-
-    document.getElementById("splitTotal").textContent =
-        total.toFixed(2);
-
-    document.getElementById("perMember").textContent =
-        share.toFixed(2);
-
-    message.textContent = "Loot split calculated successfully.";
+    if (loot.length > 0 && validParty) {
+        splitResults.classList.remove("hidden");
+    } else {
+        splitResults.classList.add("hidden");
+    }
 }
 
-// Buttons run their functions when clicked.
-addButton.addEventListener("click", addLoot);
-splitButton.addEventListener("click", splitLoot);
+// Register event listeners outside the HTML.
+addLootBtn.addEventListener("click", addLoot);
+splitLootBtn.addEventListener("click", updateUI);
+partySize.addEventListener("input", updateUI);
 
-renderLoot();
+// Initialize the interface when the page loads.
+updateUI();
